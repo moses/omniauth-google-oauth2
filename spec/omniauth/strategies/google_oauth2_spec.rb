@@ -2,8 +2,15 @@ require 'spec_helper'
 require 'omniauth-google-oauth2'
 
 describe OmniAuth::Strategies::GoogleOauth2 do
+  before(:each) do
+    @request = double('Rack::Request')
+    @request.stub(:params) { {} }
+  end
+
   subject do
-    OmniAuth::Strategies::GoogleOauth2.new(nil, @options || {})
+    OmniAuth::Strategies::GoogleOauth2.new(nil, @options || {}).tap do |strategy|
+      strategy.stub(:request) { @request }
+    end
   end
 
   it_should_behave_like 'an oauth2 strategy'
@@ -48,6 +55,10 @@ describe OmniAuth::Strategies::GoogleOauth2 do
       @options = { :authorize_options => [:scope]}
       subject.authorize_params['scope'].should eq('https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile')
     end
-  end
 
+    it 'should include request.params[:state] when present' do
+      @request.stub(:params) { { 'state' => 'some_state' } }
+      subject.authorize_params[:state].should eq('some_state')
+    end
+  end
 end
